@@ -59,6 +59,12 @@ public final class MessageClient {
 				sendBatchOrder("emagic.orders", context);
 				
 				break;
+				
+			case "emagic.bad":
+				
+				sendBadOrder(context);
+				
+				break;
 
 			default:
 				
@@ -211,6 +217,33 @@ public final class MessageClient {
 		logger.debug("Check: http://localhost:8161/admin/topics.jsp");
 	}
 	
+	/**
+	 * Send a Bad Order to a Queue - should end up in DLQ
+	 * @param context
+	 */
+	private static void sendBadOrder(ApplicationContext context) {
+		
+		logger.debug("Sending bad order: emagic.order");
+		
+		JmsTemplate jmsTemplate = (JmsTemplate) context.getBean("jmsQueueTemplate");
+		
+		jmsTemplate.send("emagic.orders", new MessageCreator() {
+
+            public Message createMessage(Session session) throws JMSException {
+
+                TextMessage message = null;
+					
+            	message = session.createTextMessage
+						("<malformed-order>2<malformed-order/>");
+                
+                return message;
+            }
+
+        });
+		
+		logger.debug("Check: http://localhost:8161/admin/queues.jsp");
+	}
+	
     /**
      * Helper method for retrieving test xml file
      * @param fileName
@@ -232,5 +265,5 @@ public final class MessageClient {
 
         xmlInput = text.toString();
         return xmlInput;
-    }	
+    }
 }
