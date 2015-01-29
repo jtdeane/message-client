@@ -1,6 +1,6 @@
 <orders batchId='A5678' date='04252014'>
     <order id='X1121' customer='Copperfield' item='Dice' amount='2'/>
-    <order id='X1122' customer='Copperfield' item='Top Hat' amount='1'/>
+    <order id='X1122' customer='Copperfield' item='Elder Wand' amount='1'/>
     <order id='X1127' customer='Houdini' item='Dice' amount='5'/>
     <order id='X1128' customer='Blain' item='Top Hat' amount='1'/>
     <order id='X1132' customer='Teller' item='Marbles' amount='7'/>
