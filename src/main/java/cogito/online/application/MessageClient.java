@@ -3,9 +3,6 @@ package cogito.online.application;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.slf4j.Logger;
@@ -13,10 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.jms.core.JmsTemplate;
-import org.springframework.jms.core.MessageCreator;
 
 /**
- * Client for Enterprise Message Workshop
+ * Client for Message Workshop
  * @author jeremydeane
  */
 public final class MessageClient {
@@ -44,25 +40,25 @@ public final class MessageClient {
 				
 			case "magic.order":
 				
-				sendSingleOrder(context);
+				sendToQueue("order.xml", "magic.order", context);
 				
 				break;
 				
 			case "magic.orders":
 				
-				sendBatchOrder("magic.orders", context);
+				sendToQueue("orders.xml", "magic.orders", context);
 				
 				break;
 				
 			case "emagic.orders":
 				
-				sendBatchOrder("emagic.orders", context);
+				sendToQueue("orders.xml", "emagic.orders", context);
 				
 				break;
 				
 			case "emagic.bad":
 				
-				sendBadOrder(context);
+				sendToQueue("bad-batch.xml", "emagic.orders", context);
 				
 				break;
 
@@ -88,182 +84,103 @@ public final class MessageClient {
 		
 		logger.debug("Sending Message to Queue: test.alchemy");
 
-		//destination set in message-client-spring.xml
+		//Destination set in message-client-spring.xml - default
 		JmsTemplate jmsTemplate = (JmsTemplate) context.getBean("jmsQueueTemplate");
 		
-		jmsTemplate.send(new MessageCreator() {
+		/*
+		 * http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/jms/core/MessageCreator.html
+		 */
+		jmsTemplate.send(session -> {
+			
+            TextMessage message = session.createTextMessage
+            		("Alchemy is forbidden; Magic is encouraged"); 
 
-            public Message createMessage(Session session) throws JMSException {
-
-                TextMessage message = session.createTextMessage
-                		("Alchemy is forbidden; Magic is encouraged"); 
-
-                message.setStringProperty("Mime Type", "text/html");
-
-                return message;
-            }
-
-        });
+            message.setStringProperty("Mime Type", "text/html");
+            
+            return message;
+			
+		});
 		
 		logger.debug("Check: http://localhost:8161/admin/queues.jsp");
 	}
 	
 	/**
-	 * Send a Single Order to a Queue
+	 * Send message to a Queue
+	 * @param file
+	 * @param destination
 	 * @param context
 	 */
-	private static void sendSingleOrder(ApplicationContext context) {
+	private static void sendToQueue(String file, String destination, ApplicationContext context) {
 		
-		logger.debug("Sending single order to Queue: magic.order");
-		
-		JmsTemplate jmsTemplate = (JmsTemplate) context.getBean("jmsQueueTemplate");
-		
-		jmsTemplate.send("magic.order", new MessageCreator() {
-
-            public Message createMessage(Session session) throws JMSException {
-
-                TextMessage message = null;
-				
-                try {
-					
-                	message = session.createTextMessage
-							(getXmlFromFile("order.xml"));
-				
-					message.setStringProperty("Mime Type", "application/xml");
-				
-                } catch (Exception e) {
-                
-            		logger.error("Unable to retrieve file order.xml: + \n:" 
-            				+ e.getMessage());
-					
-					System.exit(0);
-				} 
-                
-                return message;
-            }
-
-        });
-		
-		logger.debug("Check: http://localhost:8161/admin/queues.jsp");
-	}
-	
-	/**
-	 * Send a Batch Order to a Queue
-	 * @param context
-	 */
-	private static void sendBatchOrder(String destination, ApplicationContext context) {
-		
-		logger.debug("Sending batch order to Queue: " + destination);
+		logger.debug("Sending " + file + " to Queue: " + destination);
 		
 		JmsTemplate jmsTemplate = (JmsTemplate) context.getBean("jmsQueueTemplate");
 		
-		jmsTemplate.send(destination, new MessageCreator() {
+		jmsTemplate.send(destination, session -> {
+			
+            TextMessage message = session.createTextMessage (getXmlFromFile(file)); 
 
-            public Message createMessage(Session session) throws JMSException {
-
-                TextMessage message = null;
-				
-                try {
-					
-                	message = session.createTextMessage
-							(getXmlFromFile("orders.xml"));
-				
-					message.setStringProperty("Mime Type", "application/xml");
-				
-                } catch (Exception e) {
-                
-            		logger.error("Unable to retrieve file order.xml: + \n:" 
-            				+ e.getMessage());
-					
-					System.exit(0);
-				} 
-                
-                return message;
-            }
-
-        });
+            message.setStringProperty("Mime Type", "text/html");
+            
+            return message;
+			
+		});
 		
 		logger.debug("Check: http://localhost:8161/admin/queues.jsp");
 	}
-	
+		
 	/**
-	 * Publish Alert to Topic
+	 * Publish message to Topic
 	 * @param context
 	 */
 	private static void publishToTopic(ApplicationContext context) {
 		
 		logger.debug("Publish Alert to Topic: magic.alerts");
 		
-		//destination set in message-client-spring.xml
+		//destination set in message-client-spring.xml - default
 		JmsTemplate jmsTemplate = (JmsTemplate) context.getBean("jmsTopicTemplate");
 		
-		jmsTemplate.send(new MessageCreator() {
-
-            public Message createMessage(Session session) throws JMSException {
-
-                TextMessage message = null;
-								
-            	message = session.createTextMessage
-						("Unauthorized use of magic supplies - Dice");
+		jmsTemplate.send(session -> {
 			
-				message.setStringProperty("Mime Type", "text/html");
-				message.setStringProperty("Snatcher", "Fenrir Greyback");
-                
-                return message;
-            }
-
-        });
+            TextMessage message = session.createTextMessage
+					("Unauthorized use of magic supplies - Dice");
+		
+			message.setStringProperty("Mime Type", "text/html");
+			message.setStringProperty("Snatcher", "Fenrir Greyback");
+            
+            return message;
+			
+		});		
 		
 		logger.debug("Check: http://localhost:8161/admin/topics.jsp");
 	}
 	
-	/**
-	 * Send a Bad Order to a Queue - should end up in DLQ
-	 * @param context
-	 */
-	private static void sendBadOrder(ApplicationContext context) {
-		
-		logger.debug("Sending bad order: emagic.order");
-		
-		JmsTemplate jmsTemplate = (JmsTemplate) context.getBean("jmsQueueTemplate");
-		
-		jmsTemplate.send("emagic.orders", new MessageCreator() {
-
-            public Message createMessage(Session session) throws JMSException {
-
-                TextMessage message = null;
-					
-            	message = session.createTextMessage
-						("<malformed-order>2<malformed-order/>");
-                
-                return message;
-            }
-
-        });
-		
-		logger.debug("Check: http://localhost:8161/admin/queues.jsp");
-	}
-	
     /**
-     * Helper method for retrieving test xml file
+     * Helper method for retrieving xml from file
      * @param fileName
      * @return String
      */
-    private static String getXmlFromFile(String fileName) throws Exception {
-        String xmlInput;
-
+    private static String getXmlFromFile(String fileName) {
+        String xml = null;
         StringBuffer text = new StringBuffer();
-        BufferedReader in = null;
         String line = null;
         
-        in = new BufferedReader(new InputStreamReader(MessageClient.class
-                .getResourceAsStream(fileName)));
+        try (BufferedReader in = new BufferedReader
+        		(new InputStreamReader(MessageClient.class
+                .getResourceAsStream(fileName)))) {
+        	
+            while ((line = in.readLine()) != null) {
+                text.append(line);
+            }
 
-        while ((line = in.readLine()) != null) {
-            text.append(line);
-        }
+            xml = text.toString();
+			
+		} catch (Exception e) {
+			
+			logger.debug("Failed to read test file " + fileName + " " + e.toString());
+			System.exit(1);
+		}
 
-        xmlInput = text.toString();
-        return xmlInput;
+        return xml;
     }
 }
