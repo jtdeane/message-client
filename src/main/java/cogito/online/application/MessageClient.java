@@ -2,6 +2,7 @@ package cogito.online.application;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.UUID;
 
 import javax.jms.TextMessage;
 
@@ -59,6 +60,12 @@ public final class MessageClient {
 			case "emagic.bad":
 				
 				sendToQueue("bad-batch.xml", "emagic.orders", context);
+				
+				break;
+				
+			case "unique.orders":
+				
+				idempotentMessages(context);;
 				
 				break;
 
@@ -120,7 +127,7 @@ public final class MessageClient {
 			
             TextMessage message = session.createTextMessage (getXmlFromFile(file)); 
 
-            message.setStringProperty("Mime Type", "text/html");
+            message.setStringProperty("Mime Type", "application/xml");
             
             return message;
 			
@@ -154,6 +161,64 @@ public final class MessageClient {
 		
 		logger.debug("Check: http://localhost:8161/admin/topics.jsp");
 	}
+	
+	/**
+	 * Send three messages with the third a duplicate. One first and third
+	 * should make it to magic.order
+	 * @param context
+	 */
+	private static void idempotentMessages (ApplicationContext context) {
+		
+		String uuid = UUID.randomUUID().toString();
+		String order = getXmlFromFile("orders.xml");
+		
+		logger.debug("FIRST Message with Unique ID " + uuid 
+				+" to Queue: " + "unique.order");
+		
+		JmsTemplate jmsTemplate = (JmsTemplate) context.getBean("jmsQueueTemplate");
+		
+		jmsTemplate.send("unique.order", session -> {
+			
+            TextMessage message = session.createTextMessage (order);
+            
+            message.setStringProperty("uniqueId", uuid);
+            message.setStringProperty("Mime Type", "application/xml");
+            
+            return message;
+			
+		});
+		
+		logger.debug("SECOND Message with SAME Unique ID " + uuid 
+				+" to Queue: " + "unique.order");
+		
+		jmsTemplate.send("unique.order", session -> {
+			
+            TextMessage message = session.createTextMessage (order); 
+
+            message.setStringProperty("uniqueId", uuid);
+            message.setStringProperty("Mime Type", "application/xml");
+            
+            return message;
+			
+		});
+		
+		String uuid2 = UUID.randomUUID().toString();
+		
+		logger.debug("THIRD Message with Unique ID " + uuid2 
+				+" to Queue: " + "unique.order");
+		
+		jmsTemplate.send("unique.order", session -> {
+			
+            TextMessage message = session.createTextMessage (order); 
+
+            message.setStringProperty("uniqueId", uuid2);
+            message.setStringProperty("Mime Type", "application/xml");
+            
+            return message;
+			
+		});
+		
+	}	
 	
     /**
      * Helper method for retrieving xml from file
