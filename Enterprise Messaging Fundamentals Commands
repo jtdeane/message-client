@@ -1,0 +1,27 @@
+Enterprise Messaging Fundamentals
+
+mvn test -Dtest=JMSProducerFunctionalTest	
+
+mvn test -Dtest=JMSConsumerFunctionalTest
+
+java -jar hawtio-app.jar --port 8090
+
+http://localhost:8090/hawtio
+
+http://localhost:8080/info
+
+java -jar message-client-1.0.0.jar
+
+java -jar message-client-1.0.0.jar magic.order
+
+java -jar message-client-1.0.0.jar magic.orders
+
+java -jar message-client-1.0.0.jar magic.alerts
+
+java -jar message-client-1.0.0.jar emagic.orders
+
+java -jar message-client-1.0.0.jar emagic.bad
+
+java -jar message-client-1.0.0.jar emagic.orders
+
+java -jar message-client-1.0.0.jar unique.orders
