@@ -25,3 +25,7 @@ java -jar message-client-1.0.0.jar emagic.bad
 java -jar message-client-1.0.0.jar emagic.orders
 
 java -jar message-client-1.0.0.jar unique.orders
+
+
+#To use docker-message-client locally
+java -jar -Dactivemq.hostname=localhost docker-message-client-1.0.0.jar
