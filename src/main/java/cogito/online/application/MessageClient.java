@@ -170,7 +170,7 @@ public final class MessageClient {
 	private static void idempotentMessages (ApplicationContext context) {
 		
 		String uuid = UUID.randomUUID().toString();
-		String order = getXmlFromFile("orders.xml");
+		String order = getXmlFromFile("order.xml");
 		
 		logger.debug("FIRST Message with Unique ID " + uuid 
 				+" to Queue: " + "unique.order");
