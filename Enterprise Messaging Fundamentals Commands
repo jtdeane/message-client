@@ -8,7 +8,7 @@ java -jar hawtio-app.jar --port 8090
 
 http://localhost:8090/hawtio
 
-http://localhost:8080/info
+http://localhost:8080/actuator/info
 
 java -jar message-client-1.0.0.jar
 
@@ -27,5 +27,6 @@ java -jar message-client-1.0.0.jar emagic.orders
 java -jar message-client-1.0.0.jar unique.orders
 
 
-#To use docker-message-client locally
-java -jar -Dactivemq.hostname=localhost docker-message-client-1.0.0.jar
+#To use docker-message-client instead locally
+#https://github.com/jtdeane/docker-message-client
+java -jar -Dactivemq.hostname=localhost docker-message-client-1.0.1.jar
